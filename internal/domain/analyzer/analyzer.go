@@ -16,13 +16,11 @@ import (
 	"github.com/montanaflynn/stats"
 )
 
-const layout = "2006-01-02T15:04:05Z07:00"
-
 type parser interface {
-	Parse(log string) (*log.Record, error)
+	Parse(lg string) (*log.Record, error)
 }
 
-type interimStatistics struct {
+type statistics struct {
 	from              string
 	to                string
 	requestsCount     int
@@ -37,7 +35,7 @@ type interimStatistics struct {
 
 type Analyzer struct {
 	parser            parser
-	stats             interimStatistics
+	stats             statistics
 	from              time.Time
 	to                time.Time
 	field             string
@@ -50,7 +48,7 @@ type Analyzer struct {
 func New(ps parser) *Analyzer {
 	return &Analyzer{
 		parser: ps,
-		stats: interimStatistics{
+		stats: statistics{
 			resources: make(map[string]int),
 			codes:     make(map[int]int),
 			clients:   make(map[string]int),
@@ -59,54 +57,31 @@ func New(ps parser) *Analyzer {
 	}
 }
 
-func (s *Analyzer) Analyze(
-	from, to, field, value string,
+func (a *Analyzer) Analyze(
+	from, to time.Time,
+	field, value string,
 	isFromSpecified, isToSpecified, isFilterSpecified bool,
 	paths []string, isLocal bool,
 ) (rep report.Report, err error) {
-	s.field = field
-	s.value = value
-	s.isFromSpecified = isFromSpecified
-	s.isToSpecified = isToSpecified
-	s.isFilterSpecified = isFilterSpecified
-	s.stats.from = from
-	s.stats.to = to
-
-	if isFromSpecified {
-		s.from, err = time.Parse(layout, from)
-		if err != nil {
-			return rep, fmt.Errorf("can`t to parse -from: %v", err)
-		}
-	}
-
-	if isToSpecified {
-		s.to, err = time.Parse(layout, to)
-		if err != nil {
-			return rep, fmt.Errorf("can`t to parse -to: %v", err)
-		}
-	}
+	a.assignInitialData(from, to, paths, field, value, isFromSpecified, isToSpecified, isFilterSpecified)
 
 	if isLocal {
 		for _, path := range paths {
-			s.stats.files = append(s.stats.files, path)
-
-			err = s.processLocalLogFile(path)
+			err = a.processLocalLogFile(path)
 			if err != nil {
 				return rep, fmt.Errorf("can`t process log file: %w", err)
 			}
 		}
 	} else {
 		for _, path := range paths {
-			s.stats.files = append(s.stats.files, path)
-
-			err = s.processRemoteLogFile(path)
+			err = a.processRemoteLogFile(path)
 			if err != nil {
 				return rep, fmt.Errorf("can`t process log file: %w", err)
 			}
 		}
 	}
 
-	rep, err = generateReport(&s.stats)
+	rep, err = generateReport(&a.stats)
 	if err != nil {
 		return rep, fmt.Errorf("can`t generate report: %w", err)
 	}
@@ -114,14 +89,32 @@ func (s *Analyzer) Analyze(
 	return rep, nil
 }
 
-func (s *Analyzer) processLocalLogFile(path string) error {
+func (a *Analyzer) assignInitialData(
+	from, to time.Time,
+	paths []string,
+	field, value string,
+	isFromSpecified, isToSpecified, isFilterSpecified bool,
+) {
+	a.stats.from = from.String()
+	a.stats.to = to.String()
+	a.stats.files = append(a.stats.files, paths...)
+	a.from = from
+	a.to = to
+	a.field = field
+	a.value = value
+	a.isFromSpecified = isFromSpecified
+	a.isToSpecified = isToSpecified
+	a.isFilterSpecified = isFilterSpecified
+}
+
+func (a *Analyzer) processLocalLogFile(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("can`t open local log file: %w", err)
 	}
 	defer file.Close()
 
-	err = s.addToStatisticsFromLog(file)
+	err = a.addToStatisticsFromLog(file)
 	if err != nil {
 		return fmt.Errorf("can`t add log to interim statistics: %w", err)
 	}
@@ -129,10 +122,10 @@ func (s *Analyzer) processLocalLogFile(path string) error {
 	return nil
 }
 
-func (s *Analyzer) processRemoteLogFile(path string) error {
+func (a *Analyzer) processRemoteLogFile(path string) error {
 	parsedURL, err := url.Parse(path)
 	if err != nil {
-		return fmt.Errorf("can`t parse urle: %w", err)
+		return fmt.Errorf("can`t parse url: %w", err)
 	}
 
 	resp, err := http.Get(parsedURL.String())
@@ -143,7 +136,7 @@ func (s *Analyzer) processRemoteLogFile(path string) error {
 	}
 	defer resp.Body.Close()
 
-	err = s.addToStatisticsFromLog(resp.Body)
+	err = a.addToStatisticsFromLog(resp.Body)
 	if err != nil {
 		return fmt.Errorf("can`t add to interim statistics: %w", err)
 	}
@@ -151,22 +144,22 @@ func (s *Analyzer) processRemoteLogFile(path string) error {
 	return nil
 }
 
-func (s *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
+func (a *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
 	scn := bufio.NewScanner(lg)
 
 	for scn.Scan() {
-		logRecord, err := s.parser.Parse(scn.Text())
+		logRecord, err := a.parser.Parse(scn.Text())
 		if err != nil {
 			return fmt.Errorf("can`t parse scan result: %w", err)
 		}
 
-		isCheckSuccessful, err := s.check(logRecord)
+		isCheckSuccessful, err := a.check(logRecord)
 		if err != nil {
 			return fmt.Errorf("can't check the lg to satisfy the conditions: %w", err)
 		}
 
 		if isCheckSuccessful {
-			s.addToStatisticsFromLogRecord(logRecord)
+			a.addToStatisticsFromLogRecord(logRecord)
 		}
 	}
 
@@ -177,28 +170,28 @@ func (s *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
 	return nil
 }
 
-func (s *Analyzer) addToStatisticsFromLogRecord(logRecord *log.Record) {
-	s.stats.requestsCount++
-	s.stats.resources[logRecord.Request.Resource]++
-	s.stats.codes[logRecord.Status]++
-	s.stats.clients[logRecord.RemoteAddr]++
-	s.stats.agents[logRecord.HTTPUserAgent]++
-	s.stats.responseSizes = append(s.stats.responseSizes, float64(logRecord.BodyBytesSent))
-	s.stats.totalResponseSize += logRecord.BodyBytesSent
+func (a *Analyzer) addToStatisticsFromLogRecord(logRecord *log.Record) {
+	a.stats.requestsCount++
+	a.stats.resources[logRecord.Request.Resource]++
+	a.stats.codes[logRecord.Status]++
+	a.stats.clients[logRecord.RemoteAddr]++
+	a.stats.agents[logRecord.HTTPUserAgent]++
+	a.stats.responseSizes = append(a.stats.responseSizes, float64(logRecord.BodyBytesSent))
+	a.stats.totalResponseSize += logRecord.BodyBytesSent
 }
 
-func (s *Analyzer) check(record *log.Record) (bool, error) {
+func (a *Analyzer) check(record *log.Record) (bool, error) {
 	var err error
 
 	isTimeSuccessful := true
 	isFilterSuccessful := true
 
-	if s.isFromSpecified || s.isToSpecified {
-		isTimeSuccessful = checkTime(record.TimeLocal, s.from, s.to, s.isFromSpecified, s.isToSpecified)
+	if a.isFromSpecified || a.isToSpecified {
+		isTimeSuccessful = checkTime(record.TimeLocal, a.from, a.to, a.isFromSpecified, a.isToSpecified)
 	}
 
-	if s.isFilterSpecified {
-		isFilterSuccessful, err = checkFilter(record, s.field, s.value)
+	if a.isFilterSpecified {
+		isFilterSuccessful, err = checkFilter(record, a.field, a.value)
 		if err != nil {
 			return false, fmt.Errorf("can`t check filter: %w", err)
 		}
@@ -251,29 +244,29 @@ func checkFilter(record *log.Record, field, value string) (bool, error) {
 	return regexp.MustCompile(value).MatchString(current), nil
 }
 
-func generateReport(is *interimStatistics) (report.Report, error) {
+func generateReport(st *statistics) (report.Report, error) {
 	var (
 		percentile float64
 		err        error
 	)
 
-	if len(is.responseSizes) != 0 {
-		percentile, err = stats.Percentile(is.responseSizes, 95)
+	if len(st.responseSizes) != 0 {
+		percentile, err = stats.Percentile(st.responseSizes, 95)
 		if err != nil {
 			return report.Report{}, fmt.Errorf("can`t calculate 95th percentile of the server response size: %w", err)
 		}
 	}
 
 	return report.New(
-		is.files,
-		is.from,
-		is.to,
-		is.requestsCount,
-		transformMapToSlice(is.resources),
-		transformMapToSlice(is.codes),
-		transformMapToSlice(is.clients),
-		transformMapToSlice(is.agents),
-		float64(is.totalResponseSize)/float64(is.requestsCount),
+		st.files,
+		st.from,
+		st.to,
+		st.requestsCount,
+		transformMapToSlice(st.resources),
+		transformMapToSlice(st.codes),
+		transformMapToSlice(st.clients),
+		transformMapToSlice(st.agents),
+		float64(st.totalResponseSize)/float64(st.requestsCount),
 		percentile,
 	), nil
 }

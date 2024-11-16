@@ -13,10 +13,6 @@ const layout = "02/Jan/2006:15:04:05 -0700"
 
 type Parser struct{}
 
-func New() *Parser {
-	return &Parser{}
-}
-
 func (p *Parser) Parse(lg string) (*log.Record, error) {
 	logRegExp := regexp.MustCompile(
 		`(?P<RemoteAddr>.*) - (?P<RemoteUser>.*) ` +

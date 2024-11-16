@@ -6,8 +6,8 @@
 |Файл(-ы)|C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-07\logs.txt +
 C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-08\logs.txt +
 
-|Начальная дата|2024-11-07T16:07:58+02:00
-|Конечная дата|2024-11-08T14:39:32+00:00
+|Начальная дата|2024-11-07 16:07:58 +0200 +0200
+|Конечная дата|2024-11-08 14:39:32 +0000 +0000
 |Количество запросов|4504
 |Средний размер ответа|1646.4951154529308
 |95p размера ответа|2960.5
@@ -20,8 +20,8 @@ C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\inte
 |/website.css|5
 |/client-driven_even-keeled-Object-based/executive-Balanced.jpg|4
 |/attitude-oriented|4
-|/Seamless.jpg|3
 |/project.jpg|3
+|/Front-line.svg|3
 |===
 == Коды ответа
 [cols="^,^,^", options="header"]
@@ -41,18 +41,18 @@ C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\inte
 
 |128.220.222.217|3
 |220.186.66.135|2
-|6.231.213.206|1
-|58.45.201.65|1
-|17.251.129.26|1
+|118.82.134.87|1
+|170.137.20.248|1
+|227.169.216.113|1
 |===
 == HTTP-заголовки User-Agent
 [cols="^,^", options="header"]
 |===
 |Агент|Количество
 
-|Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/5341 (KHTML, like Gecko) Chrome/36.0.826.0 Mobile Safari/5341|2
 |Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_5) AppleWebKit/5340 (KHTML, like Gecko) Chrome/39.0.853.0 Mobile Safari/5340|2
-|Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/5361 (KHTML, like Gecko) Chrome/36.0.815.0 Mobile Safari/5361|2
-|Mozilla/5.0 (X11; Linux i686) AppleWebKit/5360 (KHTML, like Gecko) Chrome/39.0.844.0 Mobile Safari/5360|2
-|Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/5352 (KHTML, like Gecko) Chrome/39.0.878.0 Mobile Safari/5352|2
+|Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/5341 (KHTML, like Gecko) Chrome/36.0.826.0 Mobile Safari/5341|2
+|Mozilla/5.0 (Windows NT 6.2) AppleWebKit/5312 (KHTML, like Gecko) Chrome/39.0.892.0 Mobile Safari/5312|2
+|Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/5331 (KHTML, like Gecko) Chrome/39.0.836.0 Mobile Safari/5331|2
+|Mozilla/5.0 (X11; Linux i686) AppleWebKit/5322 (KHTML, like Gecko) Chrome/37.0.804.0 Mobile Safari/5322|2
 |===

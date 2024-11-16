@@ -2,6 +2,8 @@ package application
 
 import (
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/report"
 )
@@ -12,7 +14,8 @@ type finder interface {
 
 type analyzer interface {
 	Analyze(
-		from, to, field, value string,
+		from, to time.Time,
+		field, value string,
 		isFromSpecified, isToSpecified, isFilterSpecified bool,
 		paths []string, isLocal bool,
 	) (statistics report.Report, err error)
@@ -23,7 +26,7 @@ type marker interface {
 }
 
 type filer interface {
-	File(markup, format string) error
+	File(markup, format string) (file *os.File, err error)
 }
 
 type Application struct {
@@ -43,7 +46,7 @@ func New(finder finder, solver analyzer, packer marker, writer filer) *Applicati
 }
 
 func (a *Application) Run(
-	path, from, to, format, field, value string, highest int,
+	path string, from, to time.Time, format, field, value string, highest int,
 	isFromSpecified, isToSpecified, isFilterSpecified bool,
 ) error {
 	paths, isLocal, err := a.finder.Find(path)
@@ -62,7 +65,7 @@ func (a *Application) Run(
 
 	markup := a.marker.MarkUp(&rep, highest)
 
-	err = a.filer.File(markup, format)
+	_, err = a.filer.File(markup, format)
 	if err != nil {
 		return fmt.Errorf("can`t write rep to file: %w", err)
 	}

@@ -11,10 +11,6 @@ const relativePath = "/internal/infrastructure/"
 
 type Finder struct{}
 
-func New() *Finder {
-	return &Finder{}
-}
-
 func (f *Finder) Find(path string) (paths []string, isLocal bool, err error) {
 	urlRegExp := regexp.MustCompile(`^(https?://)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?(/[^\s]*)?$`)
 

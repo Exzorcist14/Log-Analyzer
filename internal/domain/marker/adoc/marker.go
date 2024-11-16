@@ -6,42 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/marker/mutils"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/report"
 )
 
-const (
-	titleGeneralInfo   = "Общая информация"
-	titleResources     = "Запрашиваемые ресурсы"
-	titleCodes         = "Коды ответа"
-	titleClients       = "IP-адреса клиентов"
-	titleAgents        = "HTTP-заголовки User-Agent"
-	header1GeneralInfo = "Метрика"
-	header2GeneralInfo = "Значение"
-	row1GeneralInfo    = "Файл(-ы)"
-	row2GeneralInfo    = "Начальная дата"
-	row3GeneralInfo    = "Конечная дата"
-	row4GeneralInfo    = "Количество запросов"
-	row5GeneralInfo    = "Средний размер ответа"
-	row6GeneralInfo    = "95p размера ответа"
-	header1Resources   = "Ресурс"
-	header2Resources   = "Количество"
-	header1Codes       = "Код"
-	header2Codes       = "Имя"
-	header3Codes       = "Количество"
-	header1Clients     = "Клиент"
-	header2Clients     = "Количество"
-	header1Agents      = "Агент"
-	header2Agents      = "Количество"
-	format             = 'f'
-	prec               = -1
-	bitSize            = 64
-)
+const separator = " +\n"
 
 type Marker struct{}
-
-func New() *Marker {
-	return &Marker{}
-}
 
 func (p *Marker) MarkUp(rep *report.Report, highest int) string {
 	var builder strings.Builder
@@ -56,20 +27,22 @@ func (p *Marker) MarkUp(rep *report.Report, highest int) string {
 }
 
 func markUpGeneralInfo(builder *strings.Builder, rep *report.Report) {
-	markUpTitle(builder, titleGeneralInfo)
-	markUpTableHeader(builder, header1GeneralInfo, header2GeneralInfo)
-	markUpTableRow(builder, row1GeneralInfo, getCellWithMultipleValues(rep.Files))
-	markUpTableRow(builder, row2GeneralInfo, rep.From)
-	markUpTableRow(builder, row3GeneralInfo, rep.To)
-	markUpTableRow(builder, row4GeneralInfo, strconv.Itoa(rep.RequestsCount))
-	markUpTableRow(builder, row5GeneralInfo, strconv.FormatFloat(rep.AverageResponseSize, format, prec, bitSize))
-	markUpTableRow(builder, row6GeneralInfo, strconv.FormatFloat(rep.Percentile95ResponseSize, format, prec, bitSize))
+	markUpTitle(builder, mutils.TitleGeneralInfo)
+	markUpTableHeader(builder, mutils.Header1GeneralInfo, mutils.Header2GeneralInfo)
+	markUpTableRow(builder, mutils.Row1GeneralInfo, mutils.GetTableCellWithMultipleValues(rep.Files, separator))
+	markUpTableRow(builder, mutils.Row2GeneralInfo, rep.From)
+	markUpTableRow(builder, mutils.Row3GeneralInfo, rep.To)
+	markUpTableRow(builder, mutils.Row4GeneralInfo, strconv.Itoa(rep.RequestsCount))
+	markUpTableRow(builder, mutils.Row5GeneralInfo, strconv.FormatFloat(rep.AverageResponseSize,
+		mutils.FloatFormat, mutils.Prec, mutils.BitSize))
+	markUpTableRow(builder, mutils.Row6GeneralInfo, strconv.FormatFloat(rep.Percentile95ResponseSize,
+		mutils.FloatFormat, mutils.Prec, mutils.BitSize))
 	markUpTableFooter(builder)
 }
 
 func markUpResources(builder *strings.Builder, rep *report.Report, highest int) {
-	markUpTitle(builder, titleResources)
-	markUpTableHeader(builder, header1Resources, header2Resources)
+	markUpTitle(builder, mutils.TitleResources)
+	markUpTableHeader(builder, mutils.Header1Resources, mutils.Header2Resources)
 
 	for i := 0; i < len(rep.MostFrequentResources) && i < highest; i++ {
 		markUpTableRow(builder, rep.MostFrequentResources[i].Data, strconv.Itoa(rep.MostFrequentResources[i].Count))
@@ -79,8 +52,8 @@ func markUpResources(builder *strings.Builder, rep *report.Report, highest int) 
 }
 
 func markUpCodes(builder *strings.Builder, rep *report.Report, highest int) {
-	markUpTitle(builder, titleCodes)
-	markUpTableHeader(builder, header1Codes, header2Codes, header3Codes)
+	markUpTitle(builder, mutils.TitleCodes)
+	markUpTableHeader(builder, mutils.Header1Codes, mutils.Header2Codes, mutils.Header3Codes)
 
 	for i := 0; i < len(rep.MostFrequentCodes) && i < highest; i++ {
 		markUpTableRow(
@@ -95,8 +68,8 @@ func markUpCodes(builder *strings.Builder, rep *report.Report, highest int) {
 }
 
 func markUpClients(builder *strings.Builder, rep *report.Report, highest int) {
-	markUpTitle(builder, titleClients)
-	markUpTableHeader(builder, header1Clients, header2Clients)
+	markUpTitle(builder, mutils.TitleClients)
+	markUpTableHeader(builder, mutils.Header1Clients, mutils.Header2Clients)
 
 	for i := 0; i < len(rep.MostFrequentClients) && i < highest; i++ {
 		markUpTableRow(builder, rep.MostFrequentClients[i].Data, strconv.Itoa(rep.MostFrequentClients[i].Count))
@@ -106,8 +79,8 @@ func markUpClients(builder *strings.Builder, rep *report.Report, highest int) {
 }
 
 func markUpAgents(builder *strings.Builder, rep *report.Report, highest int) {
-	markUpTitle(builder, titleAgents)
-	markUpTableHeader(builder, header1Agents, header2Agents)
+	markUpTitle(builder, mutils.TitleAgents)
+	markUpTableHeader(builder, mutils.Header1Agents, mutils.Header2Agents)
 
 	for i := 0; i < len(rep.MostFrequentAgents) && i < highest; i++ {
 		markUpTableRow(builder, rep.MostFrequentAgents[i].Data, strconv.Itoa(rep.MostFrequentAgents[i].Count))
@@ -143,15 +116,4 @@ func markUpTableRow(builder *strings.Builder, cells ...string) {
 
 func markUpTableFooter(builder *strings.Builder) {
 	builder.WriteString("|===\n")
-}
-
-func getCellWithMultipleValues(cell []string) string {
-	var builder strings.Builder
-
-	for _, data := range cell {
-		builder.WriteString(data)
-		builder.WriteString(" +\n")
-	}
-
-	return builder.String()
 }

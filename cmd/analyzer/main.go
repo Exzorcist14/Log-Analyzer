@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/es-debug/backend-academy-2024-go-template/internal/application"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/analyzer"
@@ -29,6 +31,7 @@ const (
 	valueUsage   = "The value of the filter field"
 	highestUsage = "the number of the most common instances of characteristics that should be displayed on the screen" +
 		" (if the available number of instances is exceeded, all are displayed)"
+	layout = "2006-01-02T15:04:05Z07:00"
 )
 
 func main() {
@@ -42,14 +45,19 @@ func main() {
 
 	flag.Parse()
 
-	if !areFlagValuesValid(*path, *format, *field, *value) {
+	pfrom, pto, err := parseTimes(*from, *to)
+	if err != nil {
 		os.Exit(1)
 	}
 
-	anlz := application.New(finder.New(), analyzer.New(parser.New()), marker.New(*format), filer.New())
+	if !areOtherFlagValuesValid(*path, *format, *field, *value, *highest) {
+		os.Exit(1)
+	}
 
-	err := anlz.Run(
-		*path, *from, *to, *format, *field, *value, *highest,
+	anlz := application.New(&finder.Finder{}, analyzer.New(&parser.Parser{}), marker.New(*format), &filer.Filer{})
+
+	err = anlz.Run(
+		*path, pfrom, pto, *format, *field, *value, *highest,
 		*from != defaultFrom, *to != defaultTo, *field != defaultPath,
 	)
 
@@ -58,7 +66,25 @@ func main() {
 	}
 }
 
-func areFlagValuesValid(path, format, field, value string) bool {
+func parseTimes(from, to string) (pfrom, pto time.Time, err error) {
+	if from != defaultFrom {
+		pfrom, err = time.Parse(layout, from)
+		if err != nil {
+			return pfrom, pto, fmt.Errorf("can`t parse time from %s: %w", from, err)
+		}
+	}
+
+	if to != defaultTo {
+		pto, err = time.Parse(layout, to)
+		if err != nil {
+			return pfrom, pto, fmt.Errorf("can`t parse time from %s: %w", from, err)
+		}
+	}
+
+	return pfrom, pto, nil
+}
+
+func areOtherFlagValuesValid(path, format, field, value string, highest int) bool {
 	fields := map[string]bool{
 		"remote_add":      true,
 		"remote_user":     true,
@@ -86,6 +112,10 @@ func areFlagValuesValid(path, format, field, value string) bool {
 	}
 
 	if _, ok := fields[field]; !ok && field != defaultField || ok && value == defaultValue {
+		return false
+	}
+
+	if highest <= 0 {
 		return false
 	}
 

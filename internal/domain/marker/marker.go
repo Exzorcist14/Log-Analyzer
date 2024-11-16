@@ -13,10 +13,10 @@ type marker interface {
 func New(marker string) marker {
 	switch marker {
 	case "markdown":
-		return markdown.New()
+		return &markdown.Marker{}
 	case "adoc":
-		return adoc.New()
+		return &adoc.Marker{}
 	default:
-		return markdown.New()
+		return &markdown.Marker{}
 	}
 }

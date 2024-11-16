@@ -95,8 +95,18 @@ func (a *Analyzer) assignInitialData(
 	field, value string,
 	isFromSpecified, isToSpecified, isFilterSpecified bool,
 ) {
-	a.stats.from = from.String()
-	a.stats.to = to.String()
+	if isFromSpecified {
+		a.stats.from = from.String()
+	} else {
+		a.stats.from = "-"
+	}
+
+	if isToSpecified {
+		a.stats.to = to.String()
+	} else {
+		a.stats.to = "-"
+	}
+
 	a.stats.files = append(a.stats.files, paths...)
 	a.from = from
 	a.to = to

@@ -67,14 +67,14 @@ func (a *Analyzer) Analyze(
 
 	if isLocal {
 		for _, path := range paths {
-			err = a.processLocalLogFile(path)
+			err = a.ProcessLocalLogFile(path)
 			if err != nil {
 				return rep, fmt.Errorf("can`t process log file: %w", err)
 			}
 		}
 	} else {
 		for _, path := range paths {
-			err = a.processRemoteLogFile(path)
+			err = a.ProcessRemoteLogFile(path)
 			if err != nil {
 				return rep, fmt.Errorf("can`t process log file: %w", err)
 			}
@@ -117,7 +117,7 @@ func (a *Analyzer) assignInitialData(
 	a.isFilterSpecified = isFilterSpecified
 }
 
-func (a *Analyzer) processLocalLogFile(path string) error {
+func (a *Analyzer) ProcessLocalLogFile(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("can`t open local log file: %w", err)
@@ -132,8 +132,8 @@ func (a *Analyzer) processLocalLogFile(path string) error {
 	return nil
 }
 
-func (a *Analyzer) processRemoteLogFile(path string) error {
-	parsedURL, err := url.Parse(path)
+func (a *Analyzer) ProcessRemoteLogFile(u string) error {
+	parsedURL, err := url.Parse(u)
 	if err != nil {
 		return fmt.Errorf("can`t parse url: %w", err)
 	}
@@ -197,7 +197,7 @@ func (a *Analyzer) check(record *log.Record) (bool, error) {
 	isFilterSuccessful := true
 
 	if a.isFromSpecified || a.isToSpecified {
-		isTimeSuccessful = checkTime(record.TimeLocal, a.from, a.to, a.isFromSpecified, a.isToSpecified)
+		isTimeSuccessful = CheckTime(record.TimeLocal, a.from, a.to, a.isFromSpecified, a.isToSpecified)
 	}
 
 	if a.isFilterSpecified {
@@ -210,7 +210,7 @@ func (a *Analyzer) check(record *log.Record) (bool, error) {
 	return isTimeSuccessful && isFilterSuccessful, nil
 }
 
-func checkTime(current, from, to time.Time, isFromSpecified, isToSpecified bool) bool {
+func CheckTime(current, from, to time.Time, isFromSpecified, isToSpecified bool) bool {
 	switch {
 	case isFromSpecified && isToSpecified:
 		return (current.After(from) || current.Equal(from)) && (current.Before(to) || current.Equal(to))

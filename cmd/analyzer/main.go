@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"time"
 
@@ -22,6 +23,7 @@ const (
 	defaultField   = "-"
 	defaultValue   = "-"
 	defaultHighest = 3
+	defaultRead    = math.MaxInt
 	pathUsage      = "path to the log files"
 	fromUsage      = "the minimum time that must be exceeded by the time the log is recorded for analysis"
 	toUsage        = "the maximum time that must exceed the time of recording the log in order for it to be analyzed"
@@ -31,6 +33,8 @@ const (
 	valueUsage   = "The value of the filter field"
 	highestUsage = "the number of the most common instances of characteristics that should be displayed on the screen" +
 		" (if the available number of instances is exceeded, all are displayed)"
+	readUsage = "the number of lines satisfying the flags that need to be read in each file." +
+		"If this number is equal to or exceeds the appropriate number of lines in the file, the entire file will be read"
 	layout = "2006-01-02T15:04:05Z07:00"
 )
 
@@ -42,6 +46,7 @@ func main() {
 	field := flag.String("filter-field", defaultField, fieldUsage)
 	value := flag.String("filter-value", defaultValue, valueUsage)
 	highest := flag.Int("highest", defaultHighest, highestUsage)
+	read := flag.Int("read", defaultRead, readUsage)
 
 	flag.Parse()
 
@@ -50,14 +55,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !areOtherFlagValuesValid(*path, *format, *field, *value, *highest) {
+	if !areOtherFlagValuesValid(*path, *format, *field, *value, *highest, *read) {
 		os.Exit(1)
 	}
 
 	anlz := application.New(&finder.Finder{}, analyzer.New(&parser.Parser{}), marker.New(*format), &filer.Filer{})
 
 	err = anlz.Run(
-		*path, pfrom, pto, *format, *field, *value, *highest,
+		*path, pfrom, pto, *format, *field, *value, *highest, *read,
 		*from != defaultFrom, *to != defaultTo, *field != defaultPath,
 	)
 
@@ -84,7 +89,7 @@ func parseTimes(from, to string) (pfrom, pto time.Time, err error) {
 	return pfrom, pto, nil
 }
 
-func areOtherFlagValuesValid(path, format, field, value string, highest int) bool {
+func areOtherFlagValuesValid(path, format, field, value string, highest, read int) bool {
 	fields := map[string]bool{
 		"remote_add":      true,
 		"remote_user":     true,
@@ -115,7 +120,7 @@ func areOtherFlagValuesValid(path, format, field, value string, highest int) boo
 		return false
 	}
 
-	if highest <= 0 {
+	if highest <= 0 || read <= 0 {
 		return false
 	}
 

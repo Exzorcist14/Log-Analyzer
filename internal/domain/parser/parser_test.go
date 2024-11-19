@@ -58,9 +58,7 @@ func TestParse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &parser.Parser{}
-
-			got, err := p.Parse(tt.lg)
+			got, err := (&parser.Parser{}).Parse(tt.lg)
 
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantErr, err != nil)

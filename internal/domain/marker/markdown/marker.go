@@ -32,10 +32,12 @@ func markUpGeneralInfo(builder *strings.Builder, rep *report.Report) {
 	markUpTableRow(builder, mutils.Row1GeneralInfo, mutils.GetTableCellWithMultipleValues(rep.Files, separator))
 	markUpTableRow(builder, mutils.Row2GeneralInfo, rep.From)
 	markUpTableRow(builder, mutils.Row3GeneralInfo, rep.To)
-	markUpTableRow(builder, mutils.Row4GeneralInfo, strconv.Itoa(rep.RequestsCount))
-	markUpTableRow(builder, mutils.Row5GeneralInfo, strconv.FormatFloat(rep.AverageResponseSize,
+	markUpTableRow(builder, mutils.Row4GeneralInfo, rep.Field)
+	markUpTableRow(builder, mutils.Row5GeneralInfo, rep.Value)
+	markUpTableRow(builder, mutils.Row6GeneralInfo, strconv.Itoa(rep.RequestsCount))
+	markUpTableRow(builder, mutils.Row7GeneralInfo, strconv.FormatFloat(rep.AverageResponseSize,
 		mutils.FloatFormat, mutils.Prec, mutils.BitSize))
-	markUpTableRow(builder, mutils.Row6GeneralInfo, strconv.FormatFloat(rep.Percentile95ResponseSize,
+	markUpTableRow(builder, mutils.Row8GeneralInfo, strconv.FormatFloat(rep.Percentile95ResponseSize,
 		mutils.FloatFormat, mutils.Prec, mutils.BitSize))
 }
 

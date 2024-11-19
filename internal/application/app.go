@@ -16,6 +16,7 @@ type analyzer interface {
 	Analyze(
 		from, to time.Time,
 		field, value string,
+		read int,
 		isFromSpecified, isToSpecified, isFilterSpecified bool,
 		paths []string, isLocal bool,
 	) (statistics report.Report, err error)
@@ -46,7 +47,7 @@ func New(finder finder, solver analyzer, packer marker, writer filer) *Applicati
 }
 
 func (a *Application) Run(
-	path string, from, to time.Time, format, field, value string, highest int,
+	path string, from, to time.Time, format, field, value string, highest, read int,
 	isFromSpecified, isToSpecified, isFilterSpecified bool,
 ) error {
 	paths, isLocal, err := a.finder.Find(path)
@@ -55,7 +56,7 @@ func (a *Application) Run(
 	}
 
 	rep, err := a.analyzer.Analyze(
-		from, to, field, value,
+		from, to, field, value, read,
 		isFromSpecified, isToSpecified, isFilterSpecified,
 		paths, isLocal,
 	)

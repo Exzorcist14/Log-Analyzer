@@ -23,6 +23,8 @@ type parser interface {
 type statistics struct {
 	from              string
 	to                string
+	field             string
+	value             string
 	requestsCount     int
 	totalResponseSize int
 	files             []string
@@ -40,6 +42,7 @@ type Analyzer struct {
 	to                time.Time
 	field             string
 	value             string
+	read              int
 	isFromSpecified   bool
 	isToSpecified     bool
 	isFilterSpecified bool
@@ -60,10 +63,11 @@ func New(ps parser) *Analyzer {
 func (a *Analyzer) Analyze(
 	from, to time.Time,
 	field, value string,
+	read int,
 	isFromSpecified, isToSpecified, isFilterSpecified bool,
 	paths []string, isLocal bool,
 ) (rep report.Report, err error) {
-	a.assignInitialData(from, to, paths, field, value, isFromSpecified, isToSpecified, isFilterSpecified)
+	a.assignInitialData(from, to, field, value, paths, read, isFromSpecified, isToSpecified, isFilterSpecified)
 
 	if isLocal {
 		for _, path := range paths {
@@ -91,8 +95,9 @@ func (a *Analyzer) Analyze(
 
 func (a *Analyzer) assignInitialData(
 	from, to time.Time,
-	paths []string,
 	field, value string,
+	paths []string,
+	read int,
 	isFromSpecified, isToSpecified, isFilterSpecified bool,
 ) {
 	if isFromSpecified {
@@ -108,10 +113,14 @@ func (a *Analyzer) assignInitialData(
 	}
 
 	a.stats.files = append(a.stats.files, paths...)
+	a.stats.field = field
+	a.stats.value = value
+
 	a.from = from
 	a.to = to
 	a.field = field
 	a.value = value
+	a.read = read
 	a.isFromSpecified = isFromSpecified
 	a.isToSpecified = isToSpecified
 	a.isFilterSpecified = isFilterSpecified
@@ -156,8 +165,9 @@ func (a *Analyzer) ProcessRemoteLogFile(u string) error {
 
 func (a *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
 	scn := bufio.NewScanner(lg)
+	linesRead := 0
 
-	for scn.Scan() {
+	for scn.Scan() && linesRead < a.read {
 		logRecord, err := a.parser.Parse(scn.Text())
 		if err != nil {
 			return fmt.Errorf("can`t parse scan result: %w", err)
@@ -170,6 +180,8 @@ func (a *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
 
 		if isCheckSuccessful {
 			a.addToStatisticsFromLogRecord(logRecord)
+
+			linesRead++
 		}
 	}
 
@@ -271,25 +283,14 @@ func generateReport(st *statistics) (report.Report, error) {
 		st.files,
 		st.from,
 		st.to,
+		st.field,
+		st.value,
 		st.requestsCount,
-		transformMapToSlice(st.resources),
-		transformMapToSlice(st.codes),
-		transformMapToSlice(st.clients),
-		transformMapToSlice(st.agents),
+		st.resources,
+		st.codes,
+		st.clients,
+		st.agents,
 		float64(st.totalResponseSize)/float64(st.requestsCount),
 		percentile,
 	), nil
-}
-
-func transformMapToSlice[T string | int](mp map[T]int) []report.DataWithCount[T] {
-	slice := []report.DataWithCount[T]{}
-
-	for data, count := range mp {
-		slice = append(slice, report.DataWithCount[T]{
-			Data:  data,
-			Count: count,
-		})
-	}
-
-	return slice
 }

@@ -5,12 +5,28 @@ import (
 	"time"
 
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/analyzer"
+	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/finder"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/parser"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/report"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAnalyze(t *testing.T) {
+	f := finder.Finder{}
+
+	patternPaths, patternIsLocal, err := f.Find(`logs/*`)
+	assert.NoError(t, err)
+
+	urlPath, urlIsLocal, err := f.Find(`https://raw.githubusercontent.com/elastic/` +
+		`examples/master/Common%20Data%20Formats/nginx_logs/nginx_logs`)
+	assert.NoError(t, err)
+
+	localPath1, isLocal1, err := f.Find(`logs/2024-11-07`)
+	assert.NoError(t, err)
+
+	localPath2, isLocal2, err := f.Find(`logs/2024-11-08`)
+	assert.NoError(t, err)
+
 	type args struct {
 		from              time.Time
 		to                time.Time
@@ -32,20 +48,14 @@ func TestAnalyze(t *testing.T) {
 		{
 			name: "local paths without flags",
 			args: args{
-				read: 4,
-				paths: []string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-07\logs.txt`,
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-08\logs.txt`,
-				},
+				read:    4,
+				paths:   patternPaths,
 				field:   "-",
 				value:   "-",
-				isLocal: true,
+				isLocal: patternIsLocal,
 			},
 			wantRep: report.New(
-				[]string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-07\logs.txt`,
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-08\logs.txt`,
-				},
+				patternPaths,
 				"-",
 				"-",
 				"-",
@@ -92,18 +102,14 @@ func TestAnalyze(t *testing.T) {
 		{
 			name: "url without flags",
 			args: args{
-				read: 10,
-				paths: []string{
-					`https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%20Formats/nginx_logs/nginx_logs`,
-				},
+				read:    10,
+				paths:   urlPath,
 				field:   "-",
 				value:   "-",
-				isLocal: false,
+				isLocal: urlIsLocal,
 			},
 			wantRep: report.New(
-				[]string{
-					`https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%20Formats/nginx_logs/nginx_logs`,
-				},
+				urlPath,
 				"-",
 				"-",
 				"-",
@@ -135,20 +141,16 @@ func TestAnalyze(t *testing.T) {
 		{
 			name: "local path with -from",
 			args: args{
-				read: 10,
-				paths: []string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-07\logs.txt`,
-				},
+				read:            10,
+				paths:           localPath1,
 				from:            time.Date(2024, 11, 7, 16, 7, 56, 0, time.FixedZone("+0000", 0)),
 				field:           "-",
 				value:           "-",
-				isLocal:         true,
+				isLocal:         isLocal2,
 				isFromSpecified: true,
 			},
 			wantRep: report.New(
-				[]string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-07\logs.txt`,
-				},
+				localPath1,
 				"2024-11-07 16:07:56 +0000 +0000",
 				"-",
 				"-",
@@ -202,20 +204,16 @@ func TestAnalyze(t *testing.T) {
 		{
 			name: "local path with -to",
 			args: args{
-				read: 10,
-				paths: []string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-07\logs.txt`,
-				},
+				read:          10,
+				paths:         localPath1,
 				to:            time.Date(2024, 11, 7, 16, 7, 56, 0, time.FixedZone("+0000", 0)),
 				field:         "-",
 				value:         "-",
-				isLocal:       true,
+				isLocal:       isLocal1,
 				isToSpecified: true,
 			},
 			wantRep: report.New(
-				[]string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-07\logs.txt`,
-				},
+				localPath1,
 				"-",
 				"2024-11-07 16:07:56 +0000 +0000",
 				"-",
@@ -270,22 +268,18 @@ func TestAnalyze(t *testing.T) {
 		{
 			name: "local path with -from and -to",
 			args: args{
-				read: 10,
-				paths: []string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-08\logs.txt`,
-				},
+				read:            10,
+				paths:           localPath2,
 				from:            time.Date(2024, 11, 8, 14, 39, 44, 0, time.FixedZone("+0000", 0)),
 				to:              time.Date(2024, 11, 8, 14, 40, 3, 0, time.FixedZone("+0000", 0)),
 				field:           "-",
 				value:           "-",
-				isLocal:         true,
+				isLocal:         isLocal2,
 				isFromSpecified: true,
 				isToSpecified:   true,
 			},
 			wantRep: report.New(
-				[]string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-08\logs.txt`,
-				},
+				localPath2,
 				"2024-11-08 14:39:44 +0000 +0000",
 				"2024-11-08 14:40:03 +0000 +0000",
 				"-",
@@ -341,19 +335,15 @@ func TestAnalyze(t *testing.T) {
 		{
 			name: "local path with filter",
 			args: args{
-				read: 10,
-				paths: []string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-08\logs.txt`,
-				},
+				read:              10,
+				paths:             localPath2,
 				field:             "http_user_agent",
 				value:             "Opera*",
-				isLocal:           true,
+				isLocal:           isLocal2,
 				isFilterSpecified: true,
 			},
 			wantRep: report.New(
-				[]string{
-					`C:\Users\vova_\GolandProjects\backend_academy_2024_project_3-go-Exzorcist14\internal\infrastructure\logs\2024-11-08\logs.txt`,
-				},
+				localPath2,
 				"-",
 				"-",
 				"http_user_agent",

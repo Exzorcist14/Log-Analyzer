@@ -7,7 +7,10 @@ import (
 	"regexp"
 )
 
-const relativePath = "/internal/infrastructure/"
+const (
+	projectDirectory = "backend_academy_2024_project_3-go-Exzorcist14"
+	relativePath     = "/internal/infrastructure/"
+)
 
 type Finder struct{}
 
@@ -52,6 +55,18 @@ func getAbsolutePrefix(path string) (string, error) {
 		absolutePath, err := os.Getwd()
 		if err != nil {
 			return "", fmt.Errorf("can`t get current directory: %v", err)
+		}
+
+		for filepath.Base(absolutePath) != projectDirectory {
+			err = os.Chdir("..")
+			if err != nil {
+				return "", fmt.Errorf("can`t change directory: %v", err)
+			}
+
+			absolutePath, err = os.Getwd()
+			if err != nil {
+				return "", fmt.Errorf("can`t get current directory: %v", err)
+			}
 		}
 
 		prefix = absolutePath + relativePath

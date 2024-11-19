@@ -4,11 +4,14 @@ import (
 	"sort"
 )
 
+// DataWithCount хранит пару значений Data и Count.
+// Data может быть типом string или int.
 type DataWithCount[T string | int] struct {
 	Data  T
 	Count int
 }
 
+// Report - структура отчёта, содержащая результаты анализа и метаинформацию о нём.
 type Report struct {
 	Files                    []string
 	From                     string
@@ -24,6 +27,7 @@ type Report struct {
 	Percentile95ResponseSize float64
 }
 
+// New возвращает инициализированный Report.
 func New(
 	files []string,
 	from, to, field, value string,
@@ -34,10 +38,10 @@ func New(
 	agents map[string]int,
 	averageServerResponseSize, serverResponseSize95Percentile float64,
 ) Report {
-	rs := TransformMapToSlice(resources)
-	cd := TransformMapToSlice(codes)
-	cl := TransformMapToSlice(clients)
-	ag := TransformMapToSlice(agents)
+	rs := transformMapToSlice(resources)
+	cd := transformMapToSlice(codes)
+	cl := transformMapToSlice(clients)
+	ag := transformMapToSlice(agents)
 
 	sort.Slice(rs, func(i, j int) bool {
 		if rs[i].Count == rs[j].Count {
@@ -87,7 +91,9 @@ func New(
 	}
 }
 
-func TransformMapToSlice[T string | int](mp map[T]int) []DataWithCount[T] {
+// transformMapToSlice преобразует словарь {данные - значение} в слайс DataWithCount.
+// Данные могут быть представлены типами string или int.
+func transformMapToSlice[T string | int](mp map[T]int) []DataWithCount[T] {
 	slice := []DataWithCount[T]{}
 
 	for data, count := range mp {

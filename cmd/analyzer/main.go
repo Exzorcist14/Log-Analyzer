@@ -25,11 +25,14 @@ const (
 	defaultHighest = 3
 	defaultRead    = math.MaxInt
 	pathUsage      = "path to the log files"
-	fromUsage      = "the minimum time that must be exceeded by the time the log is recorded for analysis"
-	toUsage        = "the maximum time that must exceed the time of recording the log in order for it to be analyzed"
-	formatUsage    = "output format (available formats: markdown, adoc)"
-	fieldUsage     = "Filter by nginx log field (available filters: remote_add, remote_user, time_local, " +
-		"method, resource, protocol, status, body_bytes_sent, http_referer, http_user_agent)"
+	fromUsage      = "the minimum time that must be exceeded by the time the log is recorded for analysis. " +
+		"The value must match the format \"2006-01-02T15:04:05 Z07:00\"."
+	toUsage = "the maximum time that must exceed the time of recording the log in order for it to be analyzed. " +
+		"The value must match the format \"2006-01-02T15:04:05 Z07:00\"."
+	formatUsage = "output format (available formats: markdown, adoc)"
+	fieldUsage  = "Filter by nginx log field (available filters: remote_add, remote_user, time_local, " +
+		"method, resource, protocol, status, body_bytes_sent, http_referer, http_user_agent). " +
+		"If a filter is specified, the -filter-value must be specified"
 	valueUsage   = "The value of the filter field"
 	highestUsage = "the number of the most common instances of characteristics that should be displayed on the screen" +
 		" (if the available number of instances is exceeded, all are displayed)"
@@ -50,11 +53,13 @@ func main() {
 
 	flag.Parse()
 
+	// Проверка валидности флагов -from и -to и их парсинг.
 	pfrom, pto, err := parseTimes(*from, *to)
 	if err != nil {
 		os.Exit(1)
 	}
 
+	// Проверка валидности остальных флагов.
 	if !areOtherFlagValuesValid(*path, *format, *field, *value, *highest, *read) {
 		os.Exit(1)
 	}
@@ -71,6 +76,7 @@ func main() {
 	}
 }
 
+// parseTimes парсит значения флагов -from и -to.
 func parseTimes(from, to string) (pfrom, pto time.Time, err error) {
 	if from != defaultFrom {
 		pfrom, err = time.Parse(layout, from)
@@ -89,7 +95,9 @@ func parseTimes(from, to string) (pfrom, pto time.Time, err error) {
 	return pfrom, pto, nil
 }
 
+// areOtherFlagValuesValid проверяет, валидны ли значения флагов path, format, fielld, value, highest, read.
 func areOtherFlagValuesValid(path, format, field, value string, highest, read int) bool {
+	// Доступные значения filter-fields соответствуют формату nginx-лога, но request разбит на method, resource, protocol.
 	fields := map[string]bool{
 		"remote_add":      true,
 		"remote_user":     true,

@@ -5,10 +5,12 @@ import (
 	"os"
 )
 
-const relativePath = "/internal/infrastructure/reports/"
+const relativePath = "/internal/infrastructure/reports/" // Относительный путь от проекта к директории, куда необходимо сохранить файл.
 
+// Filer умеет сохранять файл с размеченным отчётом.
 type Filer struct{}
 
+// File сохраняет файл соответствующего расширения с записанным в него размеченным отчётом, возвращая указатель на него.
 func (w *Filer) File(markup, format string) (*os.File, error) {
 	var name string
 

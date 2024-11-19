@@ -9,10 +9,12 @@ import (
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/log"
 )
 
-const layout = "02/Jan/2006:15:04:05 -0700"
+const layout = "02/Jan/2006:15:04:05 -0700" // Формат времени nginx лога.
 
+// Parser умеет парсить строки nginx лога.
 type Parser struct{}
 
+// Parse парсит строку nginx лога в log.Record.
 func (p *Parser) Parse(lg string) (*log.Record, error) {
 	logRegExp := regexp.MustCompile(
 		`(?P<RemoteAddr>.*) - (?P<RemoteUser>.*) ` +
@@ -28,7 +30,7 @@ func (p *Parser) Parse(lg string) (*log.Record, error) {
 
 	result := make(map[string]string)
 
-	for i, name := range logRegExp.SubexpNames() {
+	for i, name := range logRegExp.SubexpNames() { // Парсинг групп захвата.
 		if i != 0 && name != "" {
 			result[name] = match[i]
 		}
@@ -72,6 +74,7 @@ func (p *Parser) Parse(lg string) (*log.Record, error) {
 	return &record, nil
 }
 
+// parseRequest парсит http-запрос в log.Request, разбивая его на строки метода, ресурса и протокола.
 func parseRequest(request string) (log.Request, error) {
 	reqRexEpx := regexp.MustCompile(`^(\w+)\s+(\S+)\s+(HTTP/\d\.\d)$`)
 

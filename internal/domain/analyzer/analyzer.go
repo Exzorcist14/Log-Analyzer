@@ -16,10 +16,14 @@ import (
 	"github.com/montanaflynn/stats"
 )
 
+// parser описывает интерфейс парсера.
 type parser interface {
-	Parse(lg string) (*log.Record, error)
+	Parse(lg string) (*log.Record, error) // Parse парсит строку nginx лога в log.Record.
 }
 
+// statistics хранит промежуточную статистику и метаданные.
+// Вся необходимая для формирования отчёта информация хранится в этой структуре.
+// В некотором смысле statistics - промежуточное представление отчёта.
 type statistics struct {
 	from              string
 	to                string
@@ -35,19 +39,21 @@ type statistics struct {
 	agents            map[string]int
 }
 
+// Analyzer - структура внутреннего анализатора логов.
 type Analyzer struct {
-	parser            parser
-	stats             statistics
-	from              time.Time
-	to                time.Time
-	field             string
-	value             string
-	read              int
-	isFromSpecified   bool
-	isToSpecified     bool
-	isFilterSpecified bool
+	parser            parser     // Парсер строк лога.
+	stats             statistics // Статистика, которая будет использована для формирования отчёта.
+	from              time.Time  // Нижний предел времени лога, подлежащего анализу.
+	to                time.Time  // Верхний предел времени лога, подлежащего анализу.
+	field             string     // Фильтруемое поле.
+	value             string     // Значение фильтруемого поля.
+	read              int        // Количество строк, удовлетворяющих условиям, которые нужно прочесть из каждого лога.
+	isFromSpecified   bool       // Указывает небходимость использовать from.
+	isToSpecified     bool       // Указывает небходимость использовать to.
+	isFilterSpecified bool       // Указывает небходимость использовать field и value.
 }
 
+// New возвращает указатель на инициализованный Analyzer.
 func New(ps parser) *Analyzer {
 	return &Analyzer{
 		parser: ps,
@@ -60,6 +66,7 @@ func New(ps parser) *Analyzer {
 	}
 }
 
+// Analyze анализирует логи по указанным путям в соответствии с флагами и возвращает готовый для разметки отчёт.
 func (a *Analyzer) Analyze(
 	from, to time.Time,
 	field, value string,
@@ -93,6 +100,7 @@ func (a *Analyzer) Analyze(
 	return rep, nil
 }
 
+// assignInitialData записывает полученные данные в Analyzer.
 func (a *Analyzer) assignInitialData(
 	from, to time.Time,
 	field, value string,
@@ -126,14 +134,15 @@ func (a *Analyzer) assignInitialData(
 	a.isFilterSpecified = isFilterSpecified
 }
 
+// ProcessLocalLogFile обрабатывает файл по локальному пути.
 func (a *Analyzer) ProcessLocalLogFile(path string) error {
-	file, err := os.Open(path)
+	file, err := os.Open(path) // Открываем локальный файл.
 	if err != nil {
 		return fmt.Errorf("can`t open local log file: %w", err)
 	}
-	defer file.Close()
+	defer file.Close() // Откладываем закрытие file.
 
-	err = a.addToStatisticsFromLog(file)
+	err = a.addToStatisticsFromLog(file) // Собираем статистику из файла.
 	if err != nil {
 		return fmt.Errorf("can`t add log to interim statistics: %w", err)
 	}
@@ -141,21 +150,22 @@ func (a *Analyzer) ProcessLocalLogFile(path string) error {
 	return nil
 }
 
+// ProcessRemoteLogFile обрабатывает файл по url.
 func (a *Analyzer) ProcessRemoteLogFile(u string) error {
-	parsedURL, err := url.Parse(u)
+	parsedURL, err := url.Parse(u) // Парсим строку url в URL структуру.
 	if err != nil {
 		return fmt.Errorf("can`t parse url: %w", err)
 	}
 
-	resp, err := http.Get(parsedURL.String())
+	resp, err := http.Get(parsedURL.String()) // Отправляем GET-запрос по parsedURL.
 	if err != nil {
 		return fmt.Errorf("can`t make GET request: %w", err)
 	} else if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("can`t make GET request: %w", ErrWrongResponseCode{resp.StatusCode})
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // Откладываем закрытие resp.Body.
 
-	err = a.addToStatisticsFromLog(resp.Body)
+	err = a.addToStatisticsFromLog(resp.Body) // Собираем статистику из тела полученного ответа.
 	if err != nil {
 		return fmt.Errorf("can`t add to interim statistics: %w", err)
 	}
@@ -163,6 +173,7 @@ func (a *Analyzer) ProcessRemoteLogFile(u string) error {
 	return nil
 }
 
+// addToStatisticsFromLog анализирует lg построчно, добавляя результаты анализа в поле статистики Analyzer.
 func (a *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
 	scn := bufio.NewScanner(lg)
 	linesRead := 0
@@ -179,9 +190,9 @@ func (a *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
 		}
 
 		if isCheckSuccessful {
-			a.addToStatisticsFromLogRecord(logRecord)
-
 			linesRead++
+
+			a.addToStatisticsFromLogRecord(logRecord)
 		}
 	}
 
@@ -192,6 +203,7 @@ func (a *Analyzer) addToStatisticsFromLog(lg io.Reader) error {
 	return nil
 }
 
+// addToStatisticsFromLogRecord анализирует logRecord, добавляя результаты анализа в поле статистики Analyzer.
 func (a *Analyzer) addToStatisticsFromLogRecord(logRecord *log.Record) {
 	a.stats.requestsCount++
 	a.stats.resources[logRecord.Request.Resource]++
@@ -202,6 +214,7 @@ func (a *Analyzer) addToStatisticsFromLogRecord(logRecord *log.Record) {
 	a.stats.totalResponseSize += logRecord.BodyBytesSent
 }
 
+// check проверяет, соответствует ли запись лога отрезку времени анализа и фильтру.
 func (a *Analyzer) check(record *log.Record) (bool, error) {
 	var err error
 
@@ -222,6 +235,8 @@ func (a *Analyzer) check(record *log.Record) (bool, error) {
 	return isTimeSuccessful && isFilterSuccessful, nil
 }
 
+// CheckTime проверяет, лежит ли current время в [from, to].
+// Если isFromSpecified и/или isToSpecified равны false, соответствующая граница не учитывается.
 func CheckTime(current, from, to time.Time, isFromSpecified, isToSpecified bool) bool {
 	switch {
 	case isFromSpecified && isToSpecified:
@@ -235,6 +250,7 @@ func CheckTime(current, from, to time.Time, isFromSpecified, isToSpecified bool)
 	}
 }
 
+// checkFilter проверяет, соответствует ли запись лога фильтруемому полю и его значению.
 func checkFilter(record *log.Record, field, value string) (bool, error) {
 	var current string
 
@@ -266,6 +282,7 @@ func checkFilter(record *log.Record, field, value string) (bool, error) {
 	return regexp.MustCompile(value).MatchString(current), nil
 }
 
+// generateReport формирует готовый для разметки отчёт из полученного экземпляра statistics.
 func generateReport(st *statistics) (report.Report, error) {
 	var (
 		percentile float64
@@ -273,7 +290,7 @@ func generateReport(st *statistics) (report.Report, error) {
 	)
 
 	if len(st.responseSizes) != 0 {
-		percentile, err = stats.Percentile(st.responseSizes, 95)
+		percentile, err = stats.Percentile(st.responseSizes, 95) // Считаем 95%-ый перцентиль.
 		if err != nil {
 			return report.Report{}, fmt.Errorf("can`t calculate 95th percentile of the server response size: %w", err)
 		}

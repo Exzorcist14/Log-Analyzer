@@ -3,35 +3,37 @@ package mutils
 import "strings"
 
 const (
-	TitleGeneralInfo   = "Общая информация"
-	TitleResources     = "Запрашиваемые ресурсы"
-	TitleCodes         = "Коды ответа"
-	TitleClients       = "IP-адреса клиентов"
-	TitleAgents        = "HTTP-заголовки User-Agent"
-	Header1GeneralInfo = "Метрика"
-	Header2GeneralInfo = "Значение"
-	Row1GeneralInfo    = "Файл(-ы)"
-	Row2GeneralInfo    = "Начальная дата"
-	Row3GeneralInfo    = "Конечная дата"
-	Row4GeneralInfo    = "Фильтр"
-	Row5GeneralInfo    = "Значение фильтра"
-	Row6GeneralInfo    = "Количество запросов"
-	Row7GeneralInfo    = "Средний размер ответа"
-	Row8GeneralInfo    = "95p размера ответа"
-	Header1Resources   = "Ресурс"
-	Header2Resources   = "Количество"
-	Header1Codes       = "Код"
-	Header2Codes       = "Имя"
-	Header3Codes       = "Количество"
-	Header1Clients     = "Клиент"
-	Header2Clients     = "Количество"
-	Header1Agents      = "Агент"
-	Header2Agents      = "Количество"
-	FloatFormat        = 'f'
-	Prec               = -1
-	BitSize            = 64
+	TitleGeneralInfo   = "Общая информация"          // Заголовок.
+	TitleResources     = "Запрашиваемые ресурсы"     // Заголовок.
+	TitleCodes         = "Коды ответа"               // Заголовок.
+	TitleClients       = "IP-адреса клиентов"        // Заголовок.
+	TitleAgents        = "HTTP-заголовки User-Agent" // Заголовок.
+	Header1GeneralInfo = "Метрика"                   // Название 1-ого столбца таблицы общей информации.
+	Header2GeneralInfo = "Значение"                  // Название 2-ого столбца таблицы общей информации.
+	Row1GeneralInfo    = "Файл(-ы)"                  // Название содержимого 1-ой строки таблицы общей информации.
+	Row2GeneralInfo    = "Начальная дата"            // Название содержимого 2-ой строки таблицы общей информации.
+	Row3GeneralInfo    = "Конечная дата"             // Название содержимого 3-ей строки таблицы общей информации.
+	Row4GeneralInfo    = "Фильтр"                    // Название содержимого 4-ой строки таблицы общей информации.
+	Row5GeneralInfo    = "Значение фильтра"          // Название содержимого 5-ой строки таблицы общей информации.
+	Row6GeneralInfo    = "Количество запросов"       // Название содержимого 6-ой строки таблицы общей информации.
+	Row7GeneralInfo    = "Средний размер ответа"     // Название содержимого 7-ой строки таблицы общей информации.
+	Row8GeneralInfo    = "95p размера ответа"        // Название содержимого 8-ой строки таблицы общей информации.
+	Header1Resources   = "Ресурс"                    // Название 1-ого столбца таблицы запрашиваеиых ресурсов.
+	Header2Resources   = "Количество"                // Название 2-ого столбца таблицы запрашиваеиых ресурсов.
+	Header1Codes       = "Код"                       // Название 1-ого столбца таблицы кодов ответа.
+	Header2Codes       = "Имя"                       // Название 2-ого столбца таблицы кодов ответа.
+	Header3Codes       = "Количество"                // Название 3-ого столбца таблицы кодов ответа.
+	Header1Clients     = "Клиент"                    // Название 1-ого столбца таблицы ip-адресов клиентов.
+	Header2Clients     = "Количество"                // Название 2-ого столбца таблицы ip-адресов клиентов.
+	Header1Agents      = "Агент"                     // Название 1-ого столбца таблицы HTTP-заголовков User-Agent.
+	Header2Agents      = "Количество"                // Название 2-ого столбца таблицы HTTP-заголовков User-Agent.
+	FloatFormat        = 'f'                         // Параметр функции форматирования числа с плавающей точкой.
+	Prec               = -1                          // Параметр функции форматирования числа с плавающей точкой.
+	BitSize            = 64                          // Параметр функции форматирования числа с плавающей точкой.
 )
 
+// GetTableCellWithMultipleValues возвращает строку ячейки, в которую упаковано несколько значений из cell.
+// Позволяет разметить несколько значений в одной ячейке, используя возвращаемое значение.
 func GetTableCellWithMultipleValues(cell []string, separator string) string {
 	var builder strings.Builder
 

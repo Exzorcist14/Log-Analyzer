@@ -2,6 +2,7 @@ package filer
 
 import "fmt"
 
+// ErrUnknownFormat - ошибка неизвестного формата, в котором нужно сохранить.
 type ErrUnknownFormat struct {
 	format string
 }

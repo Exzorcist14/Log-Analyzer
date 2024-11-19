@@ -2,6 +2,7 @@ package marker
 
 import "fmt"
 
+// ErrUnknownFormat - ошибка строки, обозначающей неизвестный язык разметки.
 type ErrUnknownFormat struct {
 	format string
 }

@@ -4,9 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
-	"os"
 	"regexp"
 	"strconv"
 	"time"
@@ -15,6 +12,11 @@ import (
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/report"
 	"github.com/montanaflynn/stats"
 )
+
+// loader описывает интерфейс загрузчика.
+type loader interface {
+	Load(path string, isLocal bool) (io.ReadCloser, error)
+}
 
 // parser описывает интерфейс парсера.
 type parser interface {
@@ -41,6 +43,7 @@ type statistics struct {
 
 // Analyzer - структура внутреннего анализатора логов.
 type Analyzer struct {
+	loader            loader     // Загрузчик данных для чтения.
 	parser            parser     // Парсер строк лога.
 	stats             statistics // Статистика, которая будет использована для формирования отчёта.
 	from              time.Time  // Нижний предел времени лога, подлежащего анализу.
@@ -54,8 +57,9 @@ type Analyzer struct {
 }
 
 // New возвращает указатель на инициализованный Analyzer.
-func New(ps parser) *Analyzer {
+func New(ld loader, ps parser) *Analyzer {
 	return &Analyzer{
+		loader: ld,
 		parser: ps,
 		stats: statistics{
 			resources: make(map[string]int),
@@ -76,19 +80,10 @@ func (a *Analyzer) Analyze(
 ) (rep report.Report, err error) {
 	a.assignInitialData(from, to, field, value, paths, read, isFromSpecified, isToSpecified, isFilterSpecified)
 
-	if isLocal {
-		for _, path := range paths {
-			err = a.ProcessLocalLogFile(path)
-			if err != nil {
-				return rep, fmt.Errorf("can`t process log file: %w", err)
-			}
-		}
-	} else {
-		for _, path := range paths {
-			err = a.ProcessRemoteLogFile(path)
-			if err != nil {
-				return rep, fmt.Errorf("can`t process log file: %w", err)
-			}
+	for _, path := range paths {
+		err = a.ProcessLogFile(path, isLocal)
+		if err != nil {
+			return rep, fmt.Errorf("can`t process log file: %w", err)
 		}
 	}
 
@@ -134,40 +129,17 @@ func (a *Analyzer) assignInitialData(
 	a.isFilterSpecified = isFilterSpecified
 }
 
-// ProcessLocalLogFile обрабатывает файл по локальному пути.
-func (a *Analyzer) ProcessLocalLogFile(path string) error {
-	file, err := os.Open(path) // Открываем локальный файл.
+// ProcessLogFile обрабатывает файл.
+func (a *Analyzer) ProcessLogFile(path string, isLocal bool) error {
+	source, err := a.loader.Load(path, isLocal)
 	if err != nil {
-		return fmt.Errorf("can`t open local log file: %w", err)
+		return fmt.Errorf("can`t load log file: %w", err)
 	}
-	defer file.Close() // Откладываем закрытие file.
+	defer source.Close()
 
-	err = a.addToStatisticsFromLog(file) // Собираем статистику из файла.
+	err = a.addToStatisticsFromLog(source)
 	if err != nil {
-		return fmt.Errorf("can`t add log to interim statistics: %w", err)
-	}
-
-	return nil
-}
-
-// ProcessRemoteLogFile обрабатывает файл по url.
-func (a *Analyzer) ProcessRemoteLogFile(u string) error {
-	parsedURL, err := url.Parse(u) // Парсим строку url в URL структуру.
-	if err != nil {
-		return fmt.Errorf("can`t parse url: %w", err)
-	}
-
-	resp, err := http.Get(parsedURL.String()) // Отправляем GET-запрос по parsedURL.
-	if err != nil {
-		return fmt.Errorf("can`t make GET request: %w", err)
-	} else if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("can`t make GET request: %w", ErrWrongResponseCode{resp.StatusCode})
-	}
-	defer resp.Body.Close() // Откладываем закрытие resp.Body.
-
-	err = a.addToStatisticsFromLog(resp.Body) // Собираем статистику из тела полученного ответа.
-	if err != nil {
-		return fmt.Errorf("can`t add to interim statistics: %w", err)
+		return fmt.Errorf("can`t add log to statistics: %w", err)
 	}
 
 	return nil

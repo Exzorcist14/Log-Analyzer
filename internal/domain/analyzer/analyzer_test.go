@@ -6,6 +6,7 @@ import (
 
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/analyzer"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/finder"
+	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/loader"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/parser"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/report"
 	"github.com/stretchr/testify/assert"
@@ -396,7 +397,7 @@ func TestAnalyze(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := analyzer.New(&parser.Parser{})
+			a := analyzer.New(&loader.Loader{}, &parser.Parser{})
 
 			gotRep, err := a.Analyze(
 				tt.args.from,

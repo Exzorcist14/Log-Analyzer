@@ -10,6 +10,7 @@ import (
 	"github.com/es-debug/backend-academy-2024-go-template/internal/application"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/analyzer"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/finder"
+	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/loader"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/marker"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/domain/parser"
 	"github.com/es-debug/backend-academy-2024-go-template/internal/infrastructure/filer"
@@ -64,7 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	anlz := application.New(&finder.Finder{}, analyzer.New(&parser.Parser{}), marker.New(*format), &filer.Filer{})
+	anlz := application.New(&finder.Finder{}, analyzer.New(&loader.Loader{}, &parser.Parser{}), marker.New(*format), &filer.Filer{})
 
 	err = anlz.Run(
 		*path, pfrom, pto, *format, *field, *value, *highest, *read,

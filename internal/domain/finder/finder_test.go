@@ -31,7 +31,7 @@ func TestFind(t *testing.T) {
 				path: `logs/2024-11-07/logs.txt`,
 			},
 			wantMatches: []string{
-				`.*[\\/]+backend_academy_2024_project_3-go-Exzorcist14[\\/]+internal[\\/]+infrastructure[\\/]+logs[\\/]+2024-11-07[\\/]+logs.txt`,
+				`.*logs[\\/]+2024-11-07[\\/]+logs.txt`,
 			},
 			wantIsLocal: true,
 		},
@@ -41,7 +41,7 @@ func TestFind(t *testing.T) {
 				path: `logs/2024-11-07`,
 			},
 			wantMatches: []string{
-				`.*[\\/]+backend_academy_2024_project_3-go-Exzorcist14[\\/]+internal[\\/]+infrastructure[\\/]+logs[\\/]+2024-11-07[\\/]+logs.txt`,
+				`.*logs[\\/]+2024-11-07[\\/]+logs.txt`,
 			},
 			wantIsLocal: true,
 		},
@@ -51,8 +51,8 @@ func TestFind(t *testing.T) {
 				path: `logs/*`,
 			},
 			wantMatches: []string{
-				`.*[\\/]+backend_academy_2024_project_3-go-Exzorcist14[\\/]+internal[\\/]+infrastructure[\\/]+logs[\\/]+2024-11-07[\\/]+logs.txt`,
-				`.*[\\/]+backend_academy_2024_project_3-go-Exzorcist14[\\/]+internal[\\/]+infrastructure[\\/]+logs[\\/]+2024-11-08[\\/]+logs.txt`,
+				`.*logs[\\/]+2024-11-07[\\/]+logs.txt`,
+				`.*logs[\\/]+2024-11-08[\\/]+logs.txt`,
 			},
 			wantIsLocal: true,
 		},

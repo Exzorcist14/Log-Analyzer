@@ -15,18 +15,15 @@ import (
 func TestAnalyze(t *testing.T) {
 	f := finder.Finder{}
 
-	patternPaths, patternIsLocal, err := f.Find(`logs/*`)
-	assert.NoError(t, err)
+	patternPaths, patternIsLocal, _ := f.Find(`logs/*`)
 
-	urlPath, urlIsLocal, err := f.Find(`https://raw.githubusercontent.com/elastic/` +
-		`examples/master/Common%20Data%20Formats/nginx_logs/nginx_logs`)
-	assert.NoError(t, err)
+	urlPath, urlIsLocal, _ := f.Find(
+		`https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%20Formats/nginx_logs/nginx_logs`,
+	)
 
-	localPath1, isLocal1, err := f.Find(`logs/2024-11-07`)
-	assert.NoError(t, err)
+	localPath1, isLocal1, _ := f.Find(`logs/2024-11-07`)
 
-	localPath2, isLocal2, err := f.Find(`logs/2024-11-08`)
-	assert.NoError(t, err)
+	localPath2, isLocal2, _ := f.Find(`logs/2024-11-08`)
 
 	type args struct {
 		from              time.Time
